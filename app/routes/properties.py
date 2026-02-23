@@ -12,14 +12,15 @@ router = APIRouter(prefix="/properties", tags=["properties"])
 
 @router.get("/", response_model=list, status_code=status.HTTP_200_OK)
 async def get_properties(current_user=Depends(get_current_user)):
-    return await get_all_properties()
+    return await get_all_properties(current_user)
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_property(property: dict, current_user=Depends(get_current_user)):
     # If ownerId is not provided, use current_user
     if "ownerId" not in property or not property["ownerId"]:
         property["ownerId"] = current_user
-    return await create_property_service(property)
+    result = await create_property_service(property)
+    return result
 
 @router.get("/{property_id}", status_code=status.HTTP_200_OK)
 async def get_property(property_id: str, current_user=Depends(get_current_user)):

@@ -13,6 +13,16 @@ router = APIRouter()
 
 @router.post("/rooms", status_code=status.HTTP_201_CREATED)
 async def create_room_endpoint(request: RoomCreateRequest, current_user=Depends(get_current_user)):
+    # Ownership check
+    properties_collection = db["properties"]
+    from bson import ObjectId
+    try:
+        property_id = ObjectId(request.propertyId)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid propertyId format")
+    property = await properties_collection.find_one({"_id": property_id})
+    if not property or property.get("ownerId") != current_user:
+        raise HTTPException(status_code=403, detail="Forbidden: Not your property")
     room = await create_room_service(
         request.propertyId,
         request.buildingId,
@@ -37,6 +47,16 @@ async def get_rooms(
     shareType: Optional[int] = Query(None),
     current_user=Depends(get_current_user)
 ):
+    # Ownership check
+    properties_collection = db["properties"]
+    from bson import ObjectId
+    try:
+        property_id = ObjectId(propertyId)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid propertyId format")
+    property = await properties_collection.find_one({"_id": property_id})
+    if not property or property.get("ownerId") != current_user:
+        raise HTTPException(status_code=403, detail="Forbidden: Not your property")
     rooms_collection = db["rooms"]
     query = {"propertyId": propertyId}
     if floor:
